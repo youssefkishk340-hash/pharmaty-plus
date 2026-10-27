@@ -144,6 +144,7 @@ footer{text-align:center;padding:20px;color:#718279;font-size:12px}
 
 <footer>صيدليتي بلس | نسخة أولية قيد التطوير</footer>
 
+<script src="barcode.bundle.js"></script>
 <script>
 const STORAGE_KEY = 'pharmaty_plus_medicines_v1';
 let medicines = [];
@@ -249,6 +250,7 @@ function showMedicineForm(id=null){
         <label for="medCode">كود أو باركود (اختياري)</label>
         <input id="medCode" maxlength="60"
           value="${escapeHTML(m?.code || '')}" placeholder="كود الدواء">
+        <button type="button" onclick="scanMedicineBarcode()">📷 مسح الباركود بالكاميرا</button>
 
         <label for="buyPrice">سعر الشراء بالجنيه *</label>
         <input id="buyPrice" type="number" min="0" step="0.01" required
@@ -279,6 +281,22 @@ function cancelMedicineForm(){
   editingId = null;
   const area = document.getElementById('medicineFormArea');
   if(area) area.innerHTML = '';
+}
+
+async function scanMedicineBarcode(){
+  const input = document.getElementById('medCode');
+
+  if (!window.scanPharmatyBarcode) {
+    alert('قارئ الباركود غير جاهز. أعد بناء التطبيق بعد المزامنة.');
+    return;
+  }
+
+  const barcode = await window.scanPharmatyBarcode();
+
+  if (barcode) {
+    input.value = barcode.trim();
+    input.focus();
+  }
 }
 
 function saveMedicine(event){
