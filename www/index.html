@@ -147,8 +147,42 @@ footer{text-align:center;padding:20px;color:#718279;font-size:12px}
 <script src="barcode.bundle.js"></script>
 <script>
 const STORAGE_KEY = 'pharmaty_plus_medicines_v1';
+const SALES_KEY = 'pharmaty_plus_sales_v1';
+const CUSTOMERS_KEY = 'pharmaty_plus_customers_v1';
+const PAYMENTS_KEY = 'pharmaty_plus_payments_v1';
+const RETURNS_KEY = 'pharmaty_plus_returns_v1';
+
 let medicines = [];
 let editingId = null;
+let sales = [];
+let customers = [];
+let payments = [];
+let returnsList = [];
+
+function loadSalesData(){
+  try{
+    const savedSales = localStorage.getItem(SALES_KEY);
+    const savedCustomers = localStorage.getItem(CUSTOMERS_KEY);
+    const savedPayments = localStorage.getItem(PAYMENTS_KEY);
+    const savedReturns = localStorage.getItem(RETURNS_KEY);
+
+    sales = savedSales ? JSON.parse(savedSales) : [];
+    customers = savedCustomers ? JSON.parse(savedCustomers) : [];
+    payments = savedPayments ? JSON.parse(savedPayments) : [];
+    returnsList = savedReturns ? JSON.parse(savedReturns) : [];
+
+    if(!Array.isArray(sales)) sales = [];
+    if(!Array.isArray(customers)) customers = [];
+    if(!Array.isArray(payments)) payments = [];
+    if(!Array.isArray(returnsList)) returnsList = [];
+  }catch(error){
+    console.error('Sales data loading error:', error);
+    sales = [];
+    customers = [];
+    payments = [];
+    alert('تعذرت قراءة بيانات المبيعات. لم يتم حذف بيانات الأدوية.');
+  }
+}
 
 function loadMedicines(){
   try{
@@ -168,6 +202,25 @@ function saveMedicines(){
     return true;
   }catch(e){
     alert('تعذر حفظ البيانات. تأكد من وجود مساحة كافية على الجهاز.');
+    return false;
+  }
+}
+
+function saveSalesData(){
+  try{
+    const salesData = JSON.stringify(sales);
+    const customersData = JSON.stringify(customers);
+    const paymentsData = JSON.stringify(payments);
+    const returnsData = JSON.stringify(returnsList);
+
+    localStorage.setItem(SALES_KEY, salesData);
+    localStorage.setItem(CUSTOMERS_KEY, customersData);
+    localStorage.setItem(PAYMENTS_KEY, paymentsData);
+    localStorage.setItem(RETURNS_KEY, returnsData);
+    return true;
+  }catch(error){
+    console.error('Sales data saving error:', error);
+    alert('تعذر حفظ بيانات المبيعات. تأكد من وجود مساحة كافية على الجهاز.');
     return false;
   }
 }
@@ -202,12 +255,18 @@ function openSection(section){
   document.getElementById('home').hidden = true;
   document.getElementById('content').hidden = false;
 
-  if(section === 'medicines'){
+  if(section === 'sales'){
+    showSales();
+  }else if(section === 'medicines'){
     showMedicines();
   }else if(section === 'inventory'){
     showInventory();
   }else if(section === 'expiry'){
     showExpiry();
+  }else if(section === 'accounts'){
+    showCustomerAccounts();
+  }else if(section === 'reports'){
+    showSalesReports();
   }else{
     document.getElementById('sectionContent').innerHTML =
       '<h2>'+sectionTitle(section)+'</h2>'+
@@ -221,6 +280,652 @@ function sectionTitle(section){
     accounts:'الحسابات',
     reports:'التقارير'
   }[section] || 'القسم';
+}
+
+let salesCart = [];
+
+function showSales(){
+  salesCart = [];
+  document.getElementById('sectionContent').innerHTML = `
+    <h2>🛒 المبيعات</h2>
+    <button type="button" class="secondary" onclick="showSalesInvoices()">📄 الفواتير المحفوظة</button>
+    <p class="muted">ابحث عن دواء مسجل أو امسح الباركود لإضافته إلى سلة البيع.</p>
+    <button type="button" class="primary" onclick="scanSaleBarcode()">📷 مسح باركود</button>
+    <label for="saleSearch">البحث بالاسم أو الباركود</label>
+    <input id="saleSearch" placeholder="اكتب اسم الدواء أو الكود"
+      oninput="renderSaleMedicineResults()">
+    <div id="saleMedicineResults"></div>
+    <h3>🧺 سلة البيع</h3>
+    <div id="saleCart"></div>
+  `;
+  renderSaleMedicineResults();
+  renderSaleCart();
+}
+
+function renderSaleMedicineResults(){
+  const area = document.getElementById('saleMedicineResults');
+  const input = document.getElementById('saleSearch');
+  if(!area || !input) return;
+
+  const query = input.value.trim().toLowerCase();
+  if(!query){
+    area.innerHTML = '<p class="empty">ابحث عن دواء لعرض النتائج.</p>';
+    return;
+  }
+
+  const results = medicines.filter(m =>
+    String(m.name || '').toLowerCase().includes(query) ||
+    String(m.code || '').toLowerCase().includes(query)
+  ).slice(0, 20);
+
+  area.innerHTML = results.length ? results.map(m => `
+    <article class="item">
+      <h3>${escapeHTML(m.name)}</h3>
+      <p>السعر: ${money(m.sellPrice)} جنيه</p>
+      <p>المتاح: ${m.quantity}</p>
+      <button type="button" class="secondary"
+        onclick="addMedicineToSale('${m.id}')"
+        ${m.quantity <= 0 ? 'disabled' : ''}>إضافة للسلة</button>
+    </article>
+  `).join('') : '<p class="empty">لا توجد أدوية مطابقة.</p>';
+}
+
+function addMedicineToSale(id){
+  const medicine = medicines.find(m => m.id === id);
+  if(!medicine){ alert('الدواء غير موجود.'); return; }
+
+  const item = salesCart.find(x => x.medicineId === id);
+  const requested = (item ? item.quantity : 0) + 1;
+
+  if(requested > medicine.quantity){
+    alert('الكمية المطلوبة أكبر من المتاح في المخزون.');
+    return;
+  }
+
+  if(item) item.quantity++;
+  else salesCart.push({
+    medicineId: medicine.id,
+    name: medicine.name,
+    code: medicine.code || '',
+    buyPrice: medicine.buyPrice,
+    sellPrice: medicine.sellPrice,
+    quantity: 1
+  });
+
+  renderSaleCart();
+}
+
+async function scanSaleBarcode(){
+  if(!window.scanPharmatyBarcode){
+    alert('قارئ الباركود غير جاهز. يجب اختبار نسخة التطبيق أولًا.');
+    return;
+  }
+
+  const code = await window.scanPharmatyBarcode();
+  if(!code) return;
+
+  const medicine = medicines.find(m =>
+    String(m.code || '').trim().toLowerCase() === code.trim().toLowerCase()
+  );
+
+  if(!medicine){
+    alert('هذا الباركود غير مسجل. أضف الدواء إلى المخزون أولًا.');
+    return;
+  }
+
+  addMedicineToSale(medicine.id);
+}
+
+function changeSaleQuantity(id, change){
+  const item = salesCart.find(x => x.medicineId === id);
+  const medicine = medicines.find(m => m.id === id);
+  if(!item || !medicine) return;
+
+  const next = item.quantity + change;
+  if(next < 1){
+    salesCart = salesCart.filter(x => x.medicineId !== id);
+  }else if(next > medicine.quantity){
+    alert('لا توجد كمية كافية في المخزون.');
+    return;
+  }else{
+    item.quantity = next;
+  }
+
+  renderSaleCart();
+}
+
+function renderSaleCart(){
+  const area = document.getElementById('saleCart');
+  if(!area) return;
+
+  if(!salesCart.length){
+    area.innerHTML = '<p class="empty">السلة فارغة حاليًا.</p>';
+    return;
+  }
+
+  const total = salesCart.reduce((sum, item) =>
+    sum + item.sellPrice * item.quantity, 0
+  );
+
+  area.innerHTML = salesCart.map(item => `
+    <article class="item">
+      <h3>${escapeHTML(item.name)}</h3>
+      <p>سعر الوحدة: ${money(item.sellPrice)} جنيه</p>
+      <p>الكمية: ${item.quantity}</p>
+      <p>الإجمالي: <strong>${money(item.sellPrice * item.quantity)} جنيه</strong></p>
+      <button type="button" class="secondary"
+        onclick="changeSaleQuantity('${item.medicineId}', -1)">−</button>
+      <button type="button" class="secondary"
+        onclick="changeSaleQuantity('${item.medicineId}', 1)">+</button>
+      <button type="button" class="danger"
+        onclick="removeSaleItem('${item.medicineId}')">حذف</button>
+    </article>
+  `).join('') + `
+    <div class="stat">إجمالي السلة<strong>${money(total)}</strong></div>
+    <label for="saleCustomer">اسم العميل (اختياري للنقدي)</label>
+    <input id="saleCustomer" placeholder="اسم العميل">
+    <label for="salePaymentType">نوع البيع</label>
+    <select id="salePaymentType">
+      <option value="cash">نقدي</option>
+      <option value="credit">آجل</option>
+    </select>
+    <label for="salePaid">المبلغ المدفوع الآن</label>
+    <input id="salePaid" type="number" min="0" step="0.01" value="${total}">
+    <button type="button" class="primary" onclick="completeSale()">تأكيد البيع وحفظ الفاتورة</button>
+    <p class="muted">لن يُخصم المخزون إلا بعد التحقق من بيانات البيع.</p>
+  `;
+}
+
+function removeSaleItem(id){
+  salesCart = salesCart.filter(x => x.medicineId !== id);
+  renderSaleCart();
+}
+
+
+function completeSale(){
+  if(!salesCart.length){
+    alert('أضف دواء واحدًا على الأقل إلى السلة.');
+    return;
+  }
+
+  const customerName =
+    (document.getElementById('saleCustomer')?.value || '').trim();
+  const paymentType =
+    document.getElementById('salePaymentType')?.value || 'cash';
+  const paidInput = document.getElementById('salePaid');
+  const paid = Number(paidInput?.value);
+  const total = salesCart.reduce(
+    (sum, item) => sum + Number(item.sellPrice) * item.quantity, 0
+  );
+
+  if(!Number.isFinite(total) || total <= 0){
+    alert('إجمالي الفاتورة غير صالح.');
+    return;
+  }
+
+  if(!Number.isFinite(paid) || paid < 0){
+    alert('اكتب مبلغًا مدفوعًا صحيحًا.');
+    return;
+  }
+
+  if(paymentType === 'cash' && paid < total){
+    alert('في البيع النقدي يجب أن يكون المبلغ المدفوع مساويًا للإجمالي أو أكبر.');
+    return;
+  }
+
+  if(paymentType === 'credit' && !customerName){
+    alert('اكتب اسم العميل عند البيع الآجل.');
+    return;
+  }
+
+  for(const item of salesCart){
+    const medicine = medicines.find(m => m.id === item.medicineId);
+    if(!medicine || !Number.isInteger(item.quantity) ||
+       item.quantity < 1 || Number(medicine.quantity) < item.quantity){
+      alert('الكمية المتاحة تغيّرت أو لم تعد كافية. راجع السلة.');
+      renderSaleMedicineResults();
+      renderSaleCart();
+      return;
+    }
+  }
+
+  if(!confirm('تأكيد حفظ الفاتورة وخصم الكميات من المخزون؟')) return;
+
+  const oldMedicines = JSON.stringify(medicines);
+  const oldSales = JSON.stringify(sales);
+  const oldCustomers = JSON.stringify(customers);
+  const oldPayments = JSON.stringify(payments);
+
+  try{
+    let customerId = null;
+    if(paymentType === 'credit'){
+      let customer = customers.find(c =>
+        String(c.name || '').trim().toLowerCase() === customerName.toLowerCase()
+      );
+      if(!customer){
+        customer = {
+          id: Date.now().toString() + '-' + Math.random().toString(36).slice(2,8),
+          name: customerName,
+          phone: '',
+          balance: 0
+        };
+        customers.push(customer);
+      }
+      customerId = customer.id;
+    }
+
+    const invoice = {
+      id: 'INV-' + Date.now(),
+      date: new Date().toISOString(),
+      customerName: customerName || 'عميل نقدي',
+      customerId,
+      paymentType,
+      items: salesCart.map(item => ({...item})),
+      total,
+      paid: Math.min(paid, total),
+      due: Math.max(0, total - paid),
+      status: 'completed'
+    };
+
+    for(const item of salesCart){
+      const medicine = medicines.find(m => m.id === item.medicineId);
+      medicine.quantity = Number(medicine.quantity) - item.quantity;
+    }
+
+    sales.push(invoice);
+
+    if(customerId){
+      const customer = customers.find(c => c.id === customerId);
+      customer.balance = Number(customer.balance || 0) + invoice.due;
+    }
+
+    if(invoice.paid > 0){
+      payments.push({
+        id: 'PAY-' + Date.now(),
+        saleId: invoice.id,
+        customerId,
+        customerName: invoice.customerName,
+        amount: invoice.paid,
+        date: invoice.date,
+        type: 'sale'
+      });
+    }
+
+    if(!saveMedicines() || !saveSalesData()){
+      throw new Error('تعذر حفظ جميع بيانات الفاتورة.');
+    }
+
+    salesCart = [];
+    alert('تم حفظ الفاتورة بنجاح. رقم الفاتورة: ' + invoice.id);
+    showSales();
+  }catch(error){
+    console.error('Sale save error:', error);
+
+    medicines = JSON.parse(oldMedicines);
+    sales = JSON.parse(oldSales);
+    customers = JSON.parse(oldCustomers);
+    payments = JSON.parse(oldPayments);
+
+    try{
+      localStorage.setItem(STORAGE_KEY, oldMedicines);
+      localStorage.setItem(SALES_KEY, oldSales);
+      localStorage.setItem(CUSTOMERS_KEY, oldCustomers);
+      localStorage.setItem(PAYMENTS_KEY, oldPayments);
+      updateStats();
+    }catch(rollbackError){
+      console.error('Sale rollback error:', rollbackError);
+    }
+
+    alert('لم يكتمل حفظ البيع. تمت محاولة استرجاع البيانات السابقة؛ راجع المخزون والفواتير قبل إعادة المحاولة.');
+  }
+}
+
+
+function showSalesInvoices(){
+  const area = document.getElementById('sectionContent');
+  if(!area) return;
+
+  const rows = [...sales].reverse().map(invoice => `
+    <article class="item">
+      <h3>فاتورة ${escapeHTML(invoice.id)}</h3>
+      <p>التاريخ: ${escapeHTML(
+        invoice.date ? new Date(invoice.date).toLocaleString('ar-EG') : 'غير معروف'
+      )}</p>
+      <p>العميل: ${escapeHTML(invoice.customerName || 'عميل نقدي')}</p>
+      <p>الإجمالي: <strong>${money(invoice.total)}</strong></p>
+      <p>المدفوع: ${money(invoice.paid)}</p>
+      <p>المتبقي: ${money(invoice.due)}</p>
+      <p>الحالة: ${escapeHTML(invoice.status || 'غير محددة')}</p>
+      <details>
+        <summary>تفاصيل الأدوية</summary>
+        ${(Array.isArray(invoice.items) ? invoice.items : []).map(item => `
+          <p>${escapeHTML(item.name)} — الكمية: ${Number(item.quantity) || 0}
+          — ${money((Number(item.sellPrice) || 0) * (Number(item.quantity) || 0))}</p>
+        `).join('')}
+      </details>
+      <button type="button" class="secondary"
+        onclick="printSaleInvoice('${String(invoice.id).replace(/'/g, "\\'")}')">
+        طباعة الفاتورة
+      </button>
+      ${invoice.status === 'completed' ? `
+        <button type="button" class="danger"
+          onclick="cancelSaleInvoice('${String(invoice.id).replace(/'/g, "\\'")}')">
+          إلغاء الفاتورة وإرجاع المخزون
+        </button>
+      ` : ''}
+    </article>
+  `).join('');
+
+  area.innerHTML = `
+    <h2>📄 الفواتير المحفوظة</h2>
+    <button type="button" class="secondary" onclick="showSales()">العودة إلى المبيعات</button>
+    ${rows || '<p class="empty">لا توجد فواتير محفوظة حتى الآن.</p>'}
+  `;
+}
+
+function printSaleInvoice(id){
+  const invoice = sales.find(item => item.id === id);
+  if(!invoice){
+    alert('الفاتورة غير موجودة.');
+    return;
+  }
+
+  const printWindow = window.open('', '_blank');
+  if(!printWindow){
+    alert('السماح بالنوافذ المنبثقة مطلوب لطباعة الفاتورة.');
+    return;
+  }
+
+  const items = (Array.isArray(invoice.items) ? invoice.items : []).map(item => `
+    <tr>
+      <td>${escapeHTML(item.name)}</td>
+      <td>${Number(item.quantity) || 0}</td>
+      <td>${money(item.sellPrice)}</td>
+      <td>${money((Number(item.sellPrice) || 0) * (Number(item.quantity) || 0))}</td>
+    </tr>
+  `).join('');
+
+  printWindow.document.write(`
+    <!doctype html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="utf-8">
+      <title>فاتورة ${escapeHTML(invoice.id)}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:24px;color:#111}
+        h1,h2{text-align:center}
+        table{width:100%;border-collapse:collapse;margin-top:20px}
+        th,td{border:1px solid #aaa;padding:8px;text-align:right}
+        .total{margin-top:20px;font-size:18px;font-weight:bold}
+        @media print{button{display:none}}
+      </style>
+    </head>
+    <body>
+      <h1>صيدليتي بلس</h1>
+      <h2>فاتورة بيع</h2>
+      <p>رقم الفاتورة: ${escapeHTML(invoice.id)}</p>
+      <p>التاريخ: ${escapeHTML(new Date(invoice.date).toLocaleString('ar-EG'))}</p>
+      <p>العميل: ${escapeHTML(invoice.customerName || 'عميل نقدي')}</p>
+      <table>
+        <thead><tr><th>الدواء</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+        <tbody>${items}</tbody>
+      </table>
+      <p class="total">الإجمالي: ${money(invoice.total)}</p>
+      <p>المدفوع: ${money(invoice.paid)}</p>
+      <p>المتبقي: ${money(invoice.due)}</p>
+      <button onclick="window.print()">طباعة</button>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+
+
+function cancelSaleInvoice(id){
+  const invoice = sales.find(item => item.id === id);
+  if(!invoice){
+    alert('الفاتورة غير موجودة.');
+    return;
+  }
+
+  if(invoice.status !== 'completed'){
+    alert('الفاتورة ملغاة أو غير مكتملة بالفعل.');
+    return;
+  }
+
+  const invoiceCollections = payments
+    .filter(payment =>
+      payment.type === 'collection' &&
+      Array.isArray(payment.allocations) &&
+      payment.allocations.some(allocation => allocation.saleId === invoice.id)
+    )
+    .reduce((sum, payment) => sum + payment.allocations
+      .filter(allocation => allocation.saleId === invoice.id)
+      .reduce((subtotal, allocation) => subtotal + (Number(allocation.amount) || 0), 0), 0);
+
+  if(invoiceCollections > 0){
+    alert('لا يمكن إلغاء هذه الفاتورة الآن لوجود تحصيلات مرتبطة بها. يلزم تنفيذ معالجة مالية أو استرداد أولًا.');
+    return;
+  }
+
+  if((Number(invoice.paid) || 0) > 0){
+    alert('لا يمكن إلغاء فاتورة تم دفع مبلغ منها قبل إضافة إجراء آمن للاسترداد.');
+    return;
+  }
+
+  if(!confirm('هل تريد إلغاء الفاتورة وإرجاع الكميات للمخزون؟ سيتم تحديث رصيد العميل أيضًا.')) return;
+
+  const oldMedicines = JSON.stringify(medicines);
+  const oldSales = JSON.stringify(sales);
+  const oldCustomers = JSON.stringify(customers);
+  const oldPayments = JSON.stringify(payments);
+
+  try{
+    for(const item of (Array.isArray(invoice.items) ? invoice.items : [])){
+      const medicine = medicines.find(m => m.id === item.medicineId);
+      if(medicine){
+        medicine.quantity = (Number(medicine.quantity) || 0) +
+          (Number(item.quantity) || 0);
+      }
+    }
+
+    invoice.status = 'cancelled';
+    invoice.cancelledAt = new Date().toISOString();
+
+    if(invoice.customerId){
+      const customer = customers.find(c => c.id === invoice.customerId);
+      if(customer){
+        customer.balance = sales
+          .filter(item =>
+            item.customerId === customer.id &&
+            item.status === 'completed'
+          )
+          .reduce(
+            (sum, item) => sum + Math.max(0, Number(item.due) || 0),
+            0
+          );
+      }
+    }
+
+    if(!saveMedicines() || !saveSalesData()){
+      throw new Error('تعذر حفظ إلغاء الفاتورة.');
+    }
+
+    alert('تم إلغاء الفاتورة وإرجاع الكميات للمخزون وتحديث رصيد العميل.');
+    showSalesInvoices();
+  }catch(error){
+    medicines = JSON.parse(oldMedicines);
+    sales = JSON.parse(oldSales);
+    customers = JSON.parse(oldCustomers);
+    payments = JSON.parse(oldPayments);
+
+    try{
+      localStorage.setItem(STORAGE_KEY, oldMedicines);
+      localStorage.setItem(SALES_KEY, oldSales);
+      localStorage.setItem(CUSTOMERS_KEY, oldCustomers);
+      localStorage.setItem(PAYMENTS_KEY, oldPayments);
+      updateStats();
+    }catch(rollbackError){
+      console.error('Cancel rollback error:', rollbackError);
+    }
+
+    console.error('Invoice cancellation error:', error);
+    alert('لم يكتمل الإلغاء. راجع المخزون والفاتورة قبل المحاولة مرة أخرى.');
+  }
+}
+
+function showCustomerAccounts(){
+  const area = document.getElementById('sectionContent');
+  if(!area) return;
+
+  const rows = customers.map(customer => {
+    const due = sales
+      .filter(invoice =>
+        invoice.customerId === customer.id &&
+        invoice.status === 'completed'
+      )
+      .reduce((sum, invoice) => sum + Math.max(0, Number(invoice.due) || 0), 0);
+
+    return `
+      <article class="item">
+        <h3>${escapeHTML(customer.name)}</h3>
+        <p>رقم الهاتف: ${escapeHTML(customer.phone || 'غير مسجل')}</p>
+        <p>الرصيد المستحق: <strong>${money(due)}</strong></p>
+        <label for="payment-${escapeHTML(customer.id)}">تحصيل مبلغ</label>
+        <input id="payment-${escapeHTML(customer.id)}" type="number"
+          min="0.01" step="0.01" placeholder="المبلغ">
+        <button type="button" class="primary"
+          onclick="collectCustomerPayment('${String(customer.id).replace(/'/g, "\\'")}')">
+          تسجيل التحصيل
+        </button>
+      </article>
+    `;
+  }).join('');
+
+  area.innerHTML = `
+    <h2>👥 حسابات العملاء والديون</h2>
+    <button type="button" class="secondary" onclick="showSales()">العودة إلى المبيعات</button>
+    ${rows || '<p class="empty">لا توجد حسابات عملاء حتى الآن. يظهر العميل هنا عند إجراء بيع آجل.</p>'}
+  `;
+}
+
+function collectCustomerPayment(customerId){
+  const customer = customers.find(c => c.id === customerId);
+  if(!customer){
+    alert('العميل غير موجود.');
+    return;
+  }
+
+  const input = document.getElementById('payment-' + customerId);
+  const amount = Number(input?.value);
+  const due = sales
+    .filter(invoice =>
+      invoice.customerId === customerId &&
+      invoice.status === 'completed'
+    )
+    .reduce((sum, invoice) => sum + Math.max(0, Number(invoice.due) || 0), 0);
+
+  if(!Number.isFinite(amount) || amount <= 0){
+    alert('اكتب مبلغ تحصيل صحيحًا أكبر من صفر.');
+    return;
+  }
+  if(amount > due){
+    alert('المبلغ أكبر من إجمالي الدين المستحق.');
+    return;
+  }
+
+  if(!confirm('تسجيل تحصيل ' + money(amount) + ' من ' + customer.name + '؟')) return;
+
+  const oldSales = JSON.stringify(sales);
+  const oldCustomers = JSON.stringify(customers);
+  const oldPayments = JSON.stringify(payments);
+
+  try{
+    let remaining = amount;
+    const allocations = [];
+
+    for(const invoice of sales){
+      if(invoice.customerId !== customerId || invoice.status !== 'completed') continue;
+      const invoiceDue = Math.max(0, Number(invoice.due) || 0);
+      if(invoiceDue <= 0) continue;
+
+      const applied = Math.min(remaining, invoiceDue);
+      invoice.due = Math.max(0, invoiceDue - applied);
+      invoice.paid = (Number(invoice.paid) || 0) + applied;
+      allocations.push({ saleId: invoice.id, amount: applied });
+      remaining -= applied;
+      if(remaining <= 0) break;
+    }
+
+    customer.balance = Math.max(0, due - amount);
+    payments.push({
+      id: 'PAY-' + Date.now(),
+      customerId,
+      customerName: customer.name,
+      amount,
+      date: new Date().toISOString(),
+      type: 'collection',
+      allocations
+    });
+
+    if(!saveSalesData()) throw new Error('تعذر حفظ التحصيل.');
+
+    alert('تم تسجيل التحصيل بنجاح.');
+    showCustomerAccounts();
+  }catch(error){
+    sales = JSON.parse(oldSales);
+    customers = JSON.parse(oldCustomers);
+    payments = JSON.parse(oldPayments);
+
+    try{
+      localStorage.setItem(SALES_KEY, oldSales);
+      localStorage.setItem(CUSTOMERS_KEY, oldCustomers);
+      localStorage.setItem(PAYMENTS_KEY, oldPayments);
+    }catch(rollbackError){
+      console.error('Payment rollback error:', rollbackError);
+    }
+
+    console.error('Payment save error:', error);
+    alert('لم يكتمل تسجيل التحصيل. راجع الحساب قبل إعادة المحاولة.');
+  }
+}
+
+
+function showSalesReports(){
+  const area = document.getElementById('sectionContent');
+  if(!area) return;
+
+  const completed = sales.filter(invoice => invoice.status === 'completed');
+  const revenue = completed.reduce(
+    (sum, invoice) => sum + (Number(invoice.total) || 0), 0
+  );
+  const cost = completed.reduce((sum, invoice) =>
+    sum + (Array.isArray(invoice.items) ? invoice.items : []).reduce(
+      (itemsTotal, item) =>
+        itemsTotal + (Number(item.buyPrice) || 0) * (Number(item.quantity) || 0),
+      0
+    ), 0
+  );
+  const profit = revenue - cost;
+  const outstanding = completed.reduce(
+    (sum, invoice) => sum + Math.max(0, Number(invoice.due) || 0), 0
+  );
+  const paid = completed.reduce(
+    (sum, invoice) => sum + (Number(invoice.paid) || 0), 0
+  );
+
+  area.innerHTML = `
+    <h2>📊 تقارير المبيعات والأرباح</h2>
+    <button type="button" class="secondary" onclick="showSales()">العودة إلى المبيعات</button>
+    <article class="item"><p>عدد الفواتير المكتملة</p><h3>${completed.length}</h3></article>
+    <article class="item"><p>إجمالي المبيعات</p><h3>${money(revenue)}</h3></article>
+    <article class="item"><p>تكلفة الأدوية المباعة</p><h3>${money(cost)}</h3></article>
+    <article class="item"><p>الربح الإجمالي التقديري</p><h3>${money(profit)}</h3></article>
+    <article class="item"><p>إجمالي المدفوع في الفواتير</p><h3>${money(paid)}</h3></article>
+    <article class="item"><p>المبالغ المتبقية في الفواتير</p><h3>${money(outstanding)}</h3></article>
+    <p class="muted">التقرير يعتمد على الفواتير المسجلة حاليًا، ولا يشمل المصروفات التشغيلية أو الضرائب أو المرتجعات.</p>
+  `;
 }
 
 function showMedicines(){
@@ -472,6 +1177,7 @@ function showExpiry(){
 }
 
 loadMedicines();
+loadSalesData();
 updateStats();
 </script>
 </body>
