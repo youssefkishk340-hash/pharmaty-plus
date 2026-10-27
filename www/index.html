@@ -1,179 +1,460 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#087f5b">
-  <title>صيدليتي بلس</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#087f5b">
+<title>صيدليتي بلس</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f7f5;
-      color: #18352b;
-    }
-
-    header {
-      background: #087f5b;
-      color: white;
-      padding: 25px 18px;
-      border-radius: 0 0 24px 24px;
-    }
-
-    header h1 {
-      margin: 0 0 8px;
-      font-size: 26px;
-    }
-
-    header p {
-      margin: 0;
-      opacity: 0.9;
-    }
-
-    main {
-      padding: 18px;
-      max-width: 650px;
-      margin: auto;
-    }
-
-    .summary {
-      background: white;
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 20px;
-      box-shadow: 0 3px 12px #0000000a;
-    }
-
-    .summary h2 {
-      margin: 0 0 8px;
-      font-size: 19px;
-    }
-
-    .summary p {
-      margin: 0;
-      color: #60766c;
-      line-height: 1.8;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .card {
-      background: white;
-      border: 1px solid #e3eee8;
-      border-radius: 16px;
-      padding: 18px 12px;
-      text-align: center;
-      cursor: pointer;
-      color: #18352b;
-      font-size: 16px;
-      min-height: 115px;
-    }
-
-    .card:active {
-      background: #e4f5ed;
-    }
-
-    .icon {
-      display: block;
-      font-size: 30px;
-      margin-bottom: 10px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 24px 12px;
-      color: #718279;
-      font-size: 12px;
-    }
-  </style>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f7f5;
+  color:#18352b
+}
+header{
+  background:#087f5b;
+  color:white;
+  padding:22px 18px;
+  border-radius:0 0 22px 22px
+}
+header h1{margin:0 0 8px;font-size:25px}
+header p{margin:0;opacity:.9}
+main{padding:16px;max-width:700px;margin:auto}
+.summary,.panel{
+  background:white;
+  border-radius:16px;
+  padding:17px;
+  margin-bottom:16px;
+  box-shadow:0 3px 12px #00000009
+}
+.summary h2,.panel h2{margin-top:0;font-size:20px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px
+}
+.card{
+  background:white;
+  border:1px solid #e3eee8;
+  border-radius:15px;
+  padding:16px 8px;
+  min-height:95px;
+  color:#18352b;
+  font-size:16px;
+  cursor:pointer
+}
+.card:active{background:#e4f5ed}
+.icon{display:block;font-size:27px;margin-bottom:8px}
+button,input{font:inherit}
+input{
+  width:100%;
+  padding:12px;
+  border:1px solid #cedbd3;
+  border-radius:10px;
+  margin:6px 0 12px;
+  background:white;
+  color:#18352b
+}
+label{font-size:14px;font-weight:bold}
+.primary,.secondary,.danger{
+  border:0;
+  border-radius:10px;
+  padding:11px 14px;
+  cursor:pointer;
+  margin:3px
+}
+.primary{background:#087f5b;color:white}
+.secondary{background:#e4f5ed;color:#087f5b}
+.danger{background:#ffe9e9;color:#a32020}
+.back{margin-bottom:12px}
+.item{
+  border:1px solid #e3eee8;
+  border-radius:12px;
+  padding:13px;
+  margin:10px 0;
+  overflow-wrap:anywhere
+}
+.item h3{margin:0 0 9px}
+.item p{margin:6px 0;line-height:1.6}
+.muted{color:#64776c;font-size:13px}
+.badge{
+  display:inline-block;
+  background:#fff0d4;
+  color:#855500;
+  border-radius:7px;
+  padding:4px 7px;
+  font-size:12px
+}
+.empty{text-align:center;color:#718279;padding:20px 5px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:#edf7f1;border-radius:12px;padding:12px}
+.stat strong{display:block;font-size:22px;color:#087f5b;margin-top:5px}
+footer{text-align:center;padding:20px;color:#718279;font-size:12px}
+[hidden]{display:none!important}
+</style>
 </head>
 
 <body>
-  <header>
-    <h1>💊 صيدليتي بلس</h1>
-    <p>إدارة صيدليتك بسهولة وأمان</p>
-  </header>
+<header>
+  <h1>💊 صيدليتي بلس</h1>
+  <p>إدارة صيدليتك بسهولة وأمان</p>
+</header>
 
-  <main>
-    <section class="summary">
+<main>
+  <section id="home">
+    <div class="summary">
       <h2>أهلًا بك في صيدليتي بلس</h2>
-      <p>
-        نظام لإدارة الأدوية والمبيعات والمخزون والحسابات
-        من مكان واحد.
-      </p>
-    </section>
+      <p>إدارة الأدوية والمخزون من مكان واحد.</p>
+      <div class="stats">
+        <div class="stat">عدد الأدوية<strong id="totalMedicines">0</strong></div>
+        <div class="stat">إجمالي الوحدات<strong id="totalUnits">0</strong></div>
+      </div>
+    </div>
 
     <section class="grid">
-      <button class="card" onclick="showSection('sales')">
-        <span class="icon">🛒</span>
-        المبيعات
+      <button class="card" onclick="openSection('sales')">
+        <span class="icon">🛒</span>المبيعات
       </button>
-
-      <button class="card" onclick="showSection('medicines')">
-        <span class="icon">💊</span>
-        الأدوية
+      <button class="card" onclick="openSection('medicines')">
+        <span class="icon">💊</span>الأدوية
       </button>
-
-      <button class="card" onclick="showSection('inventory')">
-        <span class="icon">📦</span>
-        المخزون
+      <button class="card" onclick="openSection('inventory')">
+        <span class="icon">📦</span>المخزون
       </button>
-
-      <button class="card" onclick="showSection('expiry')">
-        <span class="icon">📅</span>
-        الصلاحية
+      <button class="card" onclick="openSection('expiry')">
+        <span class="icon">📅</span>الصلاحية
       </button>
-
-      <button class="card" onclick="showSection('accounts')">
-        <span class="icon">💰</span>
-        الحسابات
+      <button class="card" onclick="openSection('accounts')">
+        <span class="icon">💰</span>الحسابات
       </button>
-
-      <button class="card" onclick="showSection('reports')">
-        <span class="icon">📊</span>
-        التقارير
+      <button class="card" onclick="openSection('reports')">
+        <span class="icon">📊</span>التقارير
       </button>
     </section>
+  </section>
 
-    <section id="content" class="summary" hidden
-      style="margin-top:20px">
-    </section>
-  </main>
+  <section id="content" class="panel" hidden>
+    <button class="secondary back" onclick="goHome()">← الرئيسية</button>
+    <div id="sectionContent"></div>
+  </section>
+</main>
 
-  <footer>
-    صيدليتي بلس © 2026
-  </footer>
+<footer>صيدليتي بلس | نسخة أولية قيد التطوير</footer>
 
-  <script>
-    const sections = {
-      sales: ["المبيعات", "هنا سنبني شاشة تسجيل المبيعات والفواتير."],
-      medicines: ["الأدوية", "هنا سنضيف الأدوية والأسعار والباركود."],
-      inventory: ["المخزون", "هنا سنتابع الكميات المتاحة والناقصة."],
-      expiry: ["الصلاحية", "هنا سنتابع تواريخ انتهاء صلاحية الأدوية."],
-      accounts: ["الحسابات", "هنا سنسجل الإيرادات والمصروفات."],
-      reports: ["التقارير", "هنا سنعرض تقارير المبيعات والمخزون."]
+<script>
+const STORAGE_KEY = 'pharmaty_plus_medicines_v1';
+let medicines = [];
+let editingId = null;
+
+function loadMedicines(){
+  try{
+    const data = localStorage.getItem(STORAGE_KEY);
+    medicines = data ? JSON.parse(data) : [];
+    if(!Array.isArray(medicines)) medicines = [];
+  }catch(e){
+    medicines = [];
+    alert('تعذر قراءة البيانات المحفوظة.');
+  }
+}
+
+function saveMedicines(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(medicines));
+    updateStats();
+    return true;
+  }catch(e){
+    alert('تعذر حفظ البيانات. تأكد من وجود مساحة كافية على الجهاز.');
+    return false;
+  }
+}
+
+function escapeHTML(value){
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;',
+    '"':'&quot;',"'":'&#39;'
+  })[char]);
+}
+
+function money(value){
+  return Number(value || 0).toLocaleString('ar-EG',{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }) + ' ج.م';
+}
+
+function updateStats(){
+  document.getElementById('totalMedicines').textContent = medicines.length;
+  document.getElementById('totalUnits').textContent =
+    medicines.reduce((sum,m)=>sum+Number(m.quantity||0),0);
+}
+
+function goHome(){
+  document.getElementById('home').hidden = false;
+  document.getElementById('content').hidden = true;
+  updateStats();
+}
+
+function openSection(section){
+  document.getElementById('home').hidden = true;
+  document.getElementById('content').hidden = false;
+
+  if(section === 'medicines'){
+    showMedicines();
+  }else if(section === 'inventory'){
+    showInventory();
+  }else if(section === 'expiry'){
+    showExpiry();
+  }else{
+    document.getElementById('sectionContent').innerHTML =
+      '<h2>'+sectionTitle(section)+'</h2>'+
+      '<p class="empty">هذا القسم لم تتم برمجته بعد. سنضيفه في المراحل التالية.</p>';
+  }
+}
+
+function sectionTitle(section){
+  return {
+    sales:'المبيعات',
+    accounts:'الحسابات',
+    reports:'التقارير'
+  }[section] || 'القسم';
+}
+
+function showMedicines(){
+  document.getElementById('sectionContent').innerHTML = `
+    <h2>💊 إدارة الأدوية</h2>
+    <button class="primary" onclick="showMedicineForm()">+ إضافة دواء جديد</button>
+    <input id="medicineSearch" placeholder="🔍 ابحث عن دواء بالاسم"
+      oninput="renderMedicineList()">
+    <div id="medicineList"></div>
+    <div id="medicineFormArea"></div>
+  `;
+  renderMedicineList();
+}
+
+function showMedicineForm(id=null){
+  editingId = id;
+  const m = id ? medicines.find(x=>x.id===id) : null;
+
+  document.getElementById('medicineFormArea').innerHTML = `
+    <div class="panel" style="border:1px solid #dcebe2">
+      <h2>${m ? 'تعديل بيانات الدواء' : 'إضافة دواء جديد'}</h2>
+      <form id="medicineForm">
+        <label for="medName">اسم الدواء *</label>
+        <input id="medName" maxlength="100" required
+          value="${escapeHTML(m?.name || '')}" placeholder="مثال: دواء تجريبي">
+
+        <label for="medCode">كود أو باركود (اختياري)</label>
+        <input id="medCode" maxlength="60"
+          value="${escapeHTML(m?.code || '')}" placeholder="كود الدواء">
+
+        <label for="buyPrice">سعر الشراء بالجنيه *</label>
+        <input id="buyPrice" type="number" min="0" step="0.01" required
+          value="${m ? m.buyPrice : ''}" placeholder="0.00">
+
+        <label for="sellPrice">سعر البيع بالجنيه *</label>
+        <input id="sellPrice" type="number" min="0" step="0.01" required
+          value="${m ? m.sellPrice : ''}" placeholder="0.00">
+
+        <label for="medQuantity">الكمية المتاحة *</label>
+        <input id="medQuantity" type="number" min="0" step="1" required
+          value="${m ? m.quantity : '0'}" placeholder="0">
+
+        <label for="medExpiry">تاريخ انتهاء الصلاحية *</label>
+        <input id="medExpiry" type="date" required
+          value="${escapeHTML(m?.expiry || '')}">
+
+        <button class="primary" type="submit">${m ? 'حفظ التعديلات' : 'حفظ الدواء'}</button>
+        <button class="secondary" type="button" onclick="cancelMedicineForm()">إلغاء</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('medicineForm').addEventListener('submit',saveMedicine);
+}
+
+function cancelMedicineForm(){
+  editingId = null;
+  const area = document.getElementById('medicineFormArea');
+  if(area) area.innerHTML = '';
+}
+
+function saveMedicine(event){
+  event.preventDefault();
+
+  const name = document.getElementById('medName').value.trim();
+  const code = document.getElementById('medCode').value.trim();
+  const buyPrice = Number(document.getElementById('buyPrice').value);
+  const sellPrice = Number(document.getElementById('sellPrice').value);
+  const quantity = Number(document.getElementById('medQuantity').value);
+  const expiry = document.getElementById('medExpiry').value;
+
+  if(!name || !expiry || buyPrice<0 || sellPrice<0 ||
+     quantity<0 || !Number.isFinite(buyPrice) ||
+     !Number.isFinite(sellPrice) || !Number.isInteger(quantity)){
+    alert('راجع البيانات. الأسعار يجب أن تكون صحيحة والكمية عددًا صحيحًا غير سالب.');
+    return;
+  }
+
+  if(new Date(expiry+'T00:00:00') < new Date(new Date().toDateString())){
+    if(!confirm('تاريخ الصلاحية الذي أدخلته في الماضي. هل تريد المتابعة؟')) return;
+  }
+
+  const duplicateCode = code && medicines.some(m=>
+    m.code.toLowerCase()===code.toLowerCase() && m.id!==editingId
+  );
+  if(duplicateCode){
+    alert('هذا الكود مستخدم بالفعل لدواء آخر.');
+    return;
+  }
+
+  if(editingId){
+    const index = medicines.findIndex(m=>m.id===editingId);
+    if(index<0){alert('لم يتم العثور على الدواء.');return;}
+    medicines[index] = {
+      ...medicines[index],name,code,buyPrice,sellPrice,quantity,expiry
     };
+  }else{
+    medicines.push({
+      id:Date.now().toString()+'-'+Math.random().toString(36).slice(2,8),
+      name,code,buyPrice,sellPrice,quantity,expiry
+    });
+  }
 
-    function showSection(name) {
-      const section = sections[name];
-      if (!section) return;
+  if(saveMedicines()){
+    editingId = null;
+    showMedicines();
+    alert('تم حفظ بيانات الدواء على هذا الجهاز.');
+  }
+}
 
-      const content = document.getElementById("content");
-      content.hidden = false;
-      content.innerHTML =
-        "<h2>" + section[0] + "</h2>" +
-        "<p>" + section[1] + "</p>";
-      content.scrollIntoView({ behavior: "smooth" });
-    }
-  </script>
+function renderMedicineList(){
+  const list = document.getElementById('medicineList');
+  if(!list) return;
+
+  const search = (document.getElementById('medicineSearch')?.value || '')
+    .trim().toLowerCase();
+
+  const filtered = medicines.filter(m=>
+    m.name.toLowerCase().includes(search) ||
+    String(m.code||'').toLowerCase().includes(search)
+  );
+
+  if(filtered.length===0){
+    list.innerHTML = '<div class="empty">لا توجد أدوية مطابقة. يمكنك إضافة دواء جديد.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(m=>`
+    <article class="item">
+      <h3>${escapeHTML(m.name)}</h3>
+      ${m.code ? `<p>الكود: ${escapeHTML(m.code)}</p>` : ''}
+      <p>سعر الشراء: ${money(m.buyPrice)}</p>
+      <p>سعر البيع: ${money(m.sellPrice)}</p>
+      <p>الكمية: <strong>${m.quantity}</strong></p>
+      <p>الصلاحية: ${escapeHTML(m.expiry)}</p>
+      ${expiryStatus(m.expiry)}
+      <div>
+        <button class="secondary" onclick="showMedicineForm('${m.id}')">تعديل</button>
+        <button class="danger" onclick="deleteMedicine('${m.id}')">حذف</button>
+      </div>
+    </article>
+  `).join('');
+}
+
+function expiryStatus(date){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const expiry = new Date(date+'T00:00:00');
+  const days = Math.ceil((expiry-today)/86400000);
+
+  if(days<0) return '<span class="badge">منتهي الصلاحية</span>';
+  if(days<=90) return '<span class="badge">تنبيه: الصلاحية خلال '+days+' يومًا</span>';
+  return '';
+}
+
+function deleteMedicine(id){
+  const m = medicines.find(x=>x.id===id);
+  if(!m) return;
+  if(!confirm('هل تريد حذف '+m.name+'؟')) return;
+
+  const old = medicines;
+  medicines = medicines.filter(x=>x.id!==id);
+  if(saveMedicines()){
+    showMedicines();
+  }else{
+    medicines = old;
+  }
+}
+
+function showInventory(){
+  document.getElementById('sectionContent').innerHTML = `
+    <h2>📦 المخزون</h2>
+    <input id="inventorySearch" placeholder="ابحث عن دواء"
+      oninput="renderInventory()">
+    <div id="inventoryList"></div>
+  `;
+  renderInventory();
+}
+
+function renderInventory(){
+  const list = document.getElementById('inventoryList');
+  if(!list) return;
+  const search = (document.getElementById('inventorySearch')?.value||'')
+    .trim().toLowerCase();
+
+  const filtered = medicines.filter(m=>m.name.toLowerCase().includes(search));
+  if(!filtered.length){
+    list.innerHTML='<div class="empty">لا توجد بيانات مخزون بعد.</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map(m=>`
+    <article class="item">
+      <h3>${escapeHTML(m.name)}</h3>
+      <p>الكمية المتاحة: <strong>${m.quantity}</strong></p>
+      <p>قيمة المخزون بسعر الشراء: ${money(m.quantity*m.buyPrice)}</p>
+      <button class="secondary" onclick="showMedicineForm('${m.id}')">تعديل بيانات الدواء</button>
+    </article>
+  `).join('');
+}
+
+function showExpiry(){
+  document.getElementById('sectionContent').innerHTML = `
+    <h2>📅 متابعة الصلاحية</h2>
+    <p class="muted">يعرض هذا القسم الأدوية المنتهية أو التي ستنتهي خلال 90 يومًا.</p>
+    <div id="expiryList"></div>
+  `;
+
+  const list = document.getElementById('expiryList');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const filtered = medicines.filter(m=>{
+    const date = new Date(m.expiry+'T00:00:00');
+    return Math.ceil((date-today)/86400000)<=90;
+  }).sort((a,b)=>a.expiry.localeCompare(b.expiry));
+
+  if(!filtered.length){
+    list.innerHTML='<div class="empty">لا توجد أدوية منتهية أو قريبة من انتهاء الصلاحية ضمن البيانات المسجلة.</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map(m=>`
+    <article class="item">
+      <h3>${escapeHTML(m.name)}</h3>
+      <p>الكمية: ${m.quantity}</p>
+      <p>تاريخ الصلاحية: ${escapeHTML(m.expiry)}</p>
+      ${expiryStatus(m.expiry)}
+      <p class="muted">راجع العبوة الفعلية قبل اتخاذ أي إجراء بشأن الدواء.</p>
+    </article>
+  `).join('');
+}
+
+loadMedicines();
+updateStats();
+</script>
 </body>
 </html>
