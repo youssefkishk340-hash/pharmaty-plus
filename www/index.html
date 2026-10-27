@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#087f5b">
+  <title>صيدليتي بلس</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f7f5;
+      color: #18352b;
+    }
+
+    header {
+      background: #087f5b;
+      color: white;
+      padding: 25px 18px;
+      border-radius: 0 0 24px 24px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    main {
+      padding: 18px;
+      max-width: 650px;
+      margin: auto;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 12px #0000000a;
+    }
+
+    .summary h2 {
+      margin: 0 0 8px;
+      font-size: 19px;
+    }
+
+    .summary p {
+      margin: 0;
+      color: #60766c;
+      line-height: 1.8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e3eee8;
+      border-radius: 16px;
+      padding: 18px 12px;
+      text-align: center;
+      cursor: pointer;
+      color: #18352b;
+      font-size: 16px;
+      min-height: 115px;
+    }
+
+    .card:active {
+      background: #e4f5ed;
+    }
+
+    .icon {
+      display: block;
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px 12px;
+      color: #718279;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>💊 صيدليتي بلس</h1>
+    <p>إدارة صيدليتك بسهولة وأمان</p>
+  </header>
+
+  <main>
+    <section class="summary">
+      <h2>أهلًا بك في صيدليتي بلس</h2>
+      <p>
+        نظام لإدارة الأدوية والمبيعات والمخزون والحسابات
+        من مكان واحد.
+      </p>
+    </section>
+
+    <section class="grid">
+      <button class="card" onclick="showSection('sales')">
+        <span class="icon">🛒</span>
+        المبيعات
+      </button>
+
+      <button class="card" onclick="showSection('medicines')">
+        <span class="icon">💊</span>
+        الأدوية
+      </button>
+
+      <button class="card" onclick="showSection('inventory')">
+        <span class="icon">📦</span>
+        المخزون
+      </button>
+
+      <button class="card" onclick="showSection('expiry')">
+        <span class="icon">📅</span>
+        الصلاحية
+      </button>
+
+      <button class="card" onclick="showSection('accounts')">
+        <span class="icon">💰</span>
+        الحسابات
+      </button>
+
+      <button class="card" onclick="showSection('reports')">
+        <span class="icon">📊</span>
+        التقارير
+      </button>
+    </section>
+
+    <section id="content" class="summary" hidden
+      style="margin-top:20px">
+    </section>
+  </main>
+
+  <footer>
+    صيدليتي بلس © 2026
+  </footer>
+
+  <script>
+    const sections = {
+      sales: ["المبيعات", "هنا سنبني شاشة تسجيل المبيعات والفواتير."],
+      medicines: ["الأدوية", "هنا سنضيف الأدوية والأسعار والباركود."],
+      inventory: ["المخزون", "هنا سنتابع الكميات المتاحة والناقصة."],
+      expiry: ["الصلاحية", "هنا سنتابع تواريخ انتهاء صلاحية الأدوية."],
+      accounts: ["الحسابات", "هنا سنسجل الإيرادات والمصروفات."],
+      reports: ["التقارير", "هنا سنعرض تقارير المبيعات والمخزون."]
+    };
+
+    function showSection(name) {
+      const section = sections[name];
+      if (!section) return;
+
+      const content = document.getElementById("content");
+      content.hidden = false;
+      content.innerHTML =
+        "<h2>" + section[0] + "</h2>" +
+        "<p>" + section[1] + "</p>";
+      content.scrollIntoView({ behavior: "smooth" });
+    }
+  </script>
+</body>
+</html>
